@@ -28,7 +28,7 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 
 
 async def chat_agent():
-    llm = ChatOllama(model="kimi-k2:1t-cloud", temperature=0)
+    llm = ChatOllama(model="lfm2.5-thinking", temperature=0)
 
     McpConfig={}
 

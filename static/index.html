@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pi-GPT Chat Interface</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --pi-red: #C51A4A;
+            --pi-red-light: #E62E63;
+            --pi-green: #6CC04A;
+            --bg-dark: #0d0d0f;
+            --bg-card: #16161a;
+            --bg-input: #1e1e24;
+            --border: #2a2a35;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0b0;
+            --text-muted: #6a6a7a;
+            --accent-glow: rgba(197, 26, 74, 0.4);
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            height: 100vh;
+            overflow: hidden;
+            background-image: 
+                radial-gradient(circle at 20% 80%, rgba(197, 26, 74, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(108, 192, 74, 0.05) 0%, transparent 50%);
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Sidebar - Branding & Info */
+        .sidebar {
+            width: 300px;
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid var(--border);
+            background: linear-gradient(180deg, var(--bg-card) 0%, transparent 100%);
+        }
+
+        .brand {
+            text-align: center;
+            padding-bottom: 30px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .pi-logo {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 20px;
+            position: relative;
+        }
+
+        .pi-logo svg {
+            width: 100%;
+            height: 100%;
+            filter: drop-shadow(0 0 30px var(--accent-glow));
+        }
+
+        .brand h1 {
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--pi-red), var(--pi-red-light));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 5px;
+        }
+
+        .brand p {
+            color: var(--text-secondary);
+            font-size: 13px;
+        }
+
+        .features {
+            margin-top: 30px;
+            flex: 1;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            margin-bottom: 10px;
+            background: var(--bg-input);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+        }
+
+        .feature-item:hover {
+            border-color: var(--pi-red);
+            transform: translateX(5px);
+        }
+
+        .feature-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--pi-red), var(--pi-red-light));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .feature-text h3 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 3px;
+        }
+
+        .feature-text span {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .status-panel {
+            padding: 20px;
+            background: var(--bg-input);
+            border-radius: 16px;
+            border: 1px solid var(--border);
+        }
+
+        .status-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--pi-green);
+            box-shadow: 0 0 10px var(--pi-green);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .status-header span {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .status-header span.online {
+            color: var(--pi-green);
+        }
+
+        .pi-image {
+            width: 100%;
+            height: 100px;
+            background: linear-gradient(135deg, rgba(197, 26, 74, 0.1), rgba(108, 192, 74, 0.1));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .pi-image::before {
+            content: "🍓";
+            font-size: 50px;
+            opacity: 0.3;
+        }
+
+        .pi-chip {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #3a3a45, #2a2a35);
+            border-radius: 4px;
+            border: 1px solid var(--border);
+        }
+
+        .pi-chip:nth-child(1) { top: 10px; left: 10px; }
+        .pi-chip:nth-child(2) { top: 10px; right: 10px; }
+        .pi-chip:nth-child(3) { bottom: 10px; left: 10px; }
+        .pi-chip:nth-child(4) { bottom: 10px; right: 10px; }
+
+        /* Main Chat Area */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px 30px;
+        }
+
+        .chat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            margin-bottom: 10px;
+        }
+
+        .header-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-avatar {
+            width: 45px;
+            height: 45px;
+            background: linear-gradient(135deg, var(--pi-red), var(--pi-red-light));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            box-shadow: 0 4px 20px var(--accent-glow);
+        }
+
+        .header-info h2 {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .header-info p {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 10px 18px;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text-secondary);
+            font-size: 13px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            border-color: var(--pi-red);
+            color: var(--text-primary);
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .message {
+            display: flex;
+            gap: 15px;
+            max-width: 85%;
+            animation: slideIn 0.4s ease;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.user {
+            align-self: flex-end;
+            flex-direction: row-reverse;
+        }
+
+        .message-avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .message.assistant .message-avatar {
+            background: linear-gradient(135deg, var(--pi-red), var(--pi-red-light));
+            box-shadow: 0 4px 15px var(--accent-glow);
+        }
+
+        .message.user .message-avatar {
+            background: var(--bg-input);
+            border: 2px solid var(--border);
+        }
+
+        .message-bubble {
+            padding: 16px 22px;
+            border-radius: 20px;
+            line-height: 1.7;
+            font-size: 14.5px;
+            position: relative;
+        }
+
+        .message.assistant .message-bubble {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-bottom-left-radius: 4px;
+        }
+
+        .message.user .message-bubble {
+            background: linear-gradient(135deg, var(--pi-red), var(--pi-red-light));
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message-time {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 6px;
+            text-align: right;
+        }
+
+        .message.user .message-time {
+            text-align: left;
+        }
+
+        /* Typing Indicator */
+        .typing-container {
+            display: none;
+            align-items: center;
+            gap: 15px;
+            padding: 10px 0;
+        }
+
+        .typing-container.active {
+            display: flex;
+            animation: slideIn 0.3s ease;
+        }
+
+        .typing-bubble {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            border-bottom-left-radius: 4px;
+            padding: 18px 24px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--pi-red);
+            border-radius: 50%;
+            animation: typing 1.4s infinite ease-in-out;
+        }
+
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-8px); }
+        }
+
+        /* Input Area */
+        .chat-input-container {
+            padding: 20px 0;
+        }
+
+        .quick-chips {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .chip {
+            padding: 8px 16px;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            color: var(--text-secondary);
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .chip:hover {
+            background: var(--pi-red);
+            border-color: var(--pi-red);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .input-wrapper {
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+            background: var(--bg-input);
+            border: 2px solid var(--border);
+            border-radius: 20px;
+            padding: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .input-wrapper:focus-within {
+            border-color: var(--pi-red);
+            box-shadow: 0 0 25px var(--accent-glow);
+        }
+
+        .chat-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--text-primary);
+            padding: 12px 15px;
+            font-size: 15px;
+            resize: none;
+            min-height: 24px;
+            max-height: 120px;
+            font-family: inherit;
+        }
+
+        .chat-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .send-btn {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--pi-red), var(--pi-red-light));
+            border: none;
+            border-radius: 14px;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+        }
+
+        .send-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 20px var(--accent-glow);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .send-btn svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        /* Welcome Message */
+        .welcome-message {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-secondary);
+        }
+
+        .welcome-message .pi-icon {
+            font-size: 60px;
+            margin-bottom: 20px;
+            display: inline-block;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .welcome-message h3 {
+            font-size: 22px;
+            color: var(--text-primary);
+            margin-bottom: 10px;
+        }
+
+        .welcome-message p {
+            font-size: 14px;
+            max-width: 400px;
+            margin: 0 auto;
+            line-height: 1.8;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .sidebar {
+                display: none;
+            }
+            .main-content {
+                padding: 15px 20px;
+            }
+        }
+
+        /* Code block styling */
+        .code-block {
+            background: #0a0a0f;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+            font-family: 'Fira Code', monospace;
+            font-size: 13px;
+            overflow-x: auto;
+        }
+
+        .code-block .keyword { color: var(--pi-red); }
+        .code-block .string { color: var(--pi-green); }
+        .code-block .comment { color: var(--text-muted); }
+    </style>
+<base target="_blank">
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="pi-logo">
+                    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Raspberry Pi Logo SVG -->
+                        <circle cx="50" cy="50" r="45" fill="none" stroke="#C51A4A" stroke-width="2"/>
+                        <circle cx="50" cy="50" r="35" fill="none" stroke="#C51A4A" stroke-width="1" opacity="0.5"/>
+                        <text x="50" y="58" text-anchor="middle" fill="#C51A4A" font-size="35" font-weight="bold">π</text>
+                        <!-- Decorative dots -->
+                        <circle cx="20" cy="30" r="3" fill="#6CC04A"/>
+                        <circle cx="80" cy="30" r="3" fill="#6CC04A"/>
+                        <circle cx="20" cy="70" r="3" fill="#6CC04A"/>
+                        <circle cx="80" cy="70" r="3" fill="#6CC04A"/>
+                    </svg>
+                </div>
+                <h1>Pi-GPT</h1>
+                <p>AI-Powered GPIO Control</p>
+            </div>
+
+            <div class="features">
+                <div class="feature-item">
+                    <div class="feature-icon">⚡</div>
+                    <div class="feature-text">
+                        <h3>GPIO Control</h3>
+                        <span>Control pins with natural language</span>
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">📡</div>
+                    <div class="feature-text">
+                        <h3>Sensor Reading</h3>
+                        <span>Read temperature, humidity & more</span>
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">🔧</div>
+                    <div class="feature-text">
+                        <h3>Automation</h3>
+                        <span>Create automated workflows</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="status-panel">
+                <div class="status-header">
+                    <div class="status-dot" id="statusDot"></div>
+                    <span id="statusText">Connecting...</span>
+                </div>
+                <div class="pi-image">
+                    <div class="pi-chip"></div>
+                    <div class="pi-chip"></div>
+                    <div class="pi-chip"></div>
+                    <div class="pi-chip"></div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Chat -->
+        <main class="main-content">
+            <header class="chat-header">
+                <div class="header-title">
+                    <div class="header-avatar">🤖</div>
+                    <div class="header-info">
+                        <h2>Pi Assistant</h2>
+                        <p>Online • Ready to help</p>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <button class="btn" onclick="clearChat()">
+                        <span>🗑️</span> Clear
+                    </button>
+                </div>
+            </header>
+
+            <div class="chat-messages" id="chatMessages">
+                <div class="welcome-message">
+                    <div class="pi-icon">🍓</div>
+                    <h3>Welcome to Pi-GPT!</h3>
+                    <p>Your intelligent Raspberry Pi companion. Ask me to control GPIO pins, read sensors, or help with your projects!</p>
+                </div>
+            </div>
+
+            <div class="typing-container" id="typingIndicator">
+                <div class="message-avatar">🤖</div>
+                <div class="typing-bubble">
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                </div>
+            </div>
+
+            <div class="chat-input-container">
+                <div class="quick-chips">
+                    <button class="chip" onclick="sendQuick('Turn on LED on pin 18')">LED On (Pin 18)</button>
+                    <button class="chip" onclick="sendQuick('Turn off LED on pin 18')">LED Off (Pin 18)</button>
+                    <button class="chip" onclick="sendQuick('Read temperature')">Read Temperature</button>
+                    <button class="chip" onclick="sendQuick('Status of all GPIO pins')">GPIO Status</button>
+                    <button class="chip" onclick="sendQuick('Blink LED on pin 17')">Blink LED</button>
+                </div>
+                <div class="input-wrapper">
+                    <textarea 
+                        class="chat-input" 
+                        id="chatInput" 
+                        placeholder="Type your message or command..." 
+                        rows="1"
+                        onkeydown="handleKeyDown(event)"
+                        oninput="autoResize(this)"
+                    ></textarea>
+                    <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const API_BASE_URL = window.location.origin;
+        let isFirstMessage = true;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            checkHealth();
+            setInterval(checkHealth, 10000);
+        });
+
+        // Check API Health
+        async function checkHealth() {
+            const dot = document.getElementById('statusDot');
+            const text = document.getElementById('statusText');
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/health`);
+                if (response.ok) {
+                    dot.style.background = '#6CC04A';
+                    dot.style.boxShadow = '0 0 10px #6CC04A';
+                    text.textContent = 'Connected';
+                    text.className = 'online';
+                } else {
+                    throw new Error('Health check failed');
+                }
+            } catch (error) {
+                dot.style.background = '#ff4757';
+                dot.style.boxShadow = '0 0 10px #ff4757';
+                text.textContent = 'Disconnected';
+                text.className = '';
+            }
+        }
+
+        // Handle Enter key
+        function handleKeyDown(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        }
+
+        // Auto resize textarea
+        function autoResize(textarea) {
+            textarea.style.height = 'auto';
+            textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+        }
+
+        // Send quick message
+        function sendQuick(text) {
+            document.getElementById('chatInput').value = text;
+            sendMessage();
+        }
+
+        // Send Message
+        async function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const sendBtn = document.getElementById('sendBtn');
+            const message = input.value.trim();
+            
+            if (!message) return;
+
+            // Remove welcome message on first interaction
+            if (isFirstMessage) {
+                document.getElementById('chatMessages').innerHTML = '';
+                isFirstMessage = false;
+            }
+
+            // Add user message
+            addMessage(message, 'user');
+            input.value = '';
+            input.style.height = 'auto';
+            
+            // Show typing
+            document.getElementById('typingIndicator').classList.add('active');
+            sendBtn.disabled = true;
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/chat`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `query=${encodeURIComponent(message)}`
+                });
+
+                if (!response.ok) throw new Error('API Error');
+
+                const data = await response.json();
+                
+                document.getElementById('typingIndicator').classList.remove('active');
+                addMessage(data.message, 'assistant');
+                
+            } catch (error) {
+                document.getElementById('typingIndicator').classList.remove('active');
+                addMessage('Sorry, I\'m having trouble connecting to the API. Please make sure the server is running.', 'assistant');
+            } finally {
+                sendBtn.disabled = false;
+            }
+        }
+
+        // Add message to chat
+        function addMessage(text, sender) {
+            const container = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+            
+            const time = new Date().toLocaleTimeString('en-US', { 
+                hour: '2-digit', 
+                minute: '2-digit',
+                hour12: true 
+            });
+
+            messageDiv.innerHTML = `
+                <div class="message-avatar">${sender === 'user' ? '👤' : '🤖'}</div>
+                <div>
+                    <div class="message-bubble">${formatMessage(text)}</div>
+                    <div class="message-time">${time}</div>
+                </div>
+            `;
+            
+            container.appendChild(messageDiv);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // Format message (basic markdown)
+        function formatMessage(text) {
+            return escapeHtml(text)
+                .replace(/\n/g, '<br>')
+                .replace(/```(\w+)?\n([\s\S]*?)```/g, '<div class="code-block">$2</div>')
+                .replace(/`([^`]+)`/g, '<code style="background: rgba(197,26,74,0.2); padding: 2px 6px; border-radius: 4px; font-family: monospace;">$1</code>');
+        }
+
+        // Escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Clear chat
+        function clearChat() {
+            const container = document.getElementById('chatMessages');
+            container.innerHTML = `
+                <div class="welcome-message">
+                    <div class="pi-icon">🍓</div>
+                    <h3>Chat Cleared!</h3>
+                    <p>How can I help you with your Raspberry Pi today?</p>
+                </div>
+            `;
+            isFirstMessage = true;
+        }
+    </script>
+</body>
+</html>

@@ -1,5 +1,6 @@
 from fastapi import FastAPI, APIRouter
 from fastapi.responses import JSONResponse
+from fastapi import Form
 
 from app.core.Ai_agent import chat_agent
 
@@ -15,7 +16,7 @@ config = {
 }
 
 @chat_router.post("/chat")
-async def chat(query:str):
+async def chat(query:str = Form(...)):
 
 
     agent = await chat_agent()
